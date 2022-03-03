@@ -1,9 +1,10 @@
 # Телеграм-бот v.002 - бот создаёт меню, присылает собачку, и анекдот
+# Ссылка на бот: t.me/Tyurina_Elena_1MD15_bot
 
 import telebot  # pyTelegramBotAPI	4.3.1
 from telebot import types
 
-# Ссылка на бот: t.me/Tyurina_Elena_1MD15_bot
+
 bot = telebot.TeleBot('5144148734:AAEL1qxIJIXxsHP7lkCwtL9Pb4cLHE3a4RM')  # Создаем экземпляр бота
 
 # -----------------------------------------------------------------------
