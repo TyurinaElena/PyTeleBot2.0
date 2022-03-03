@@ -14,8 +14,7 @@ def start(message, res=False):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     btn1 = types.KeyboardButton("👋 Главное меню")
     btn2 = types.KeyboardButton("❓ Помощь")
-    btn3 = types.KeyboardButton("Домашнее задание")
-    markup.add(btn1, btn2, btn3)
+    markup.add(btn1, btn2)
 
     bot.send_message(chat_id,
                      text = "Привет, {0.first_name}! Я - текстовый бот для курса "
@@ -33,8 +32,9 @@ def get_text_message(message):
         btn1 = types.KeyboardButton("Развлечения")
         btn2 = types.KeyboardButton("WEB-камера")
         btn3 = types.KeyboardButton("Управление")
+        btn4 = types.KeyboardButton("Домашнее задание")
         back = types.KeyboardButton("Помощь")
-        markup.add(btn1, btn2, btn3, back)
+        markup.add(btn1, btn2, btn3, btn4, back)
         bot.send_message(chat_id, text="Вы в главном меню", reply_markup=markup)
 
     elif ms_text == "Развлечения":
@@ -46,10 +46,15 @@ def get_text_message(message):
         bot.send_message(chat_id, text="Развлечения", reply_markup=markup)
 
     elif ms_text == "/dog" or ms_text == "Прислать собаку":
-        bot.send_message(chat_id, text="Ещё не готово(((")
+        img = open('dog1.jpeg', 'rb')
+        bot.send_photo(message.chat.id, img)
 
     elif ms_text == "Прислать анекдот":
-        bot.send_message(chat_id, text="Ещё не готово(((")
+        bot.send_message(chat_id, text="Заходит енот с ноутбуком в бар и заказывает виски. "
+                                       "Бармен остолбенел, но приносит виски строчащему "
+                                       "на ноутбуке еноту и говорит:\n— Вы… говорящий енот? "
+                                       "Никогда такого не видел!\n— Я недавно приехал. Работу вот ищу."
+                                       "\n— Может, вам в цирк работать пойти?\n— А зачем им программисты?")
 
     elif ms_text == "WEB-камера":
         bot.send_message(chat_id, text="Ещё не готово(((")
@@ -65,6 +70,21 @@ def get_text_message(message):
         key1.add(btn1)
         img = open('1МД15_Тюрина_Елена.jpg', 'rb')
         bot.send_photo(message.chat.id, img, reply_markup=key1)
+
+    elif ms_text == "Домашнее задание":
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        btn1 = types.KeyboardButton("1")
+        btn2 = types.KeyboardButton("2")
+        btn3 = types.KeyboardButton("3")
+        btn4 = types.KeyboardButton("4")
+        btn5 = types.KeyboardButton("5")
+        btn6 = types.KeyboardButton("6")
+        btn7 = types.KeyboardButton("7")
+        btn8 = types.KeyboardButton("8")
+        btn9 = types.KeyboardButton("9")
+        btn10 = types.KeyboardButton("10")
+        markup.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7, btn8, btn9, btn10)
+        bot.send_message(chat_id, text="Домашнее задание", reply_markup=markup)
 
     else:
         bot.send_message(chat_id, text="Я тебя слышу! Твоё сообщение: " + ms_text)
