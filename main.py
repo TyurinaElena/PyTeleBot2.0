@@ -83,10 +83,10 @@ def get_text_message(message):
         btn8 = types.KeyboardButton("8")
         btn9 = types.KeyboardButton("9")
         btn10 = types.KeyboardButton("10")
-        back = types.KeyboardButton("Вернуться в главное меню")
-        markup.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7, btn8, btn9, btn10)
+        btn11 = types.KeyboardButton("Вернуться в главное меню")
+        markup.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7, btn8, btn9, btn10, btn11)
         bot.send_message(chat_id, text="Домашнее задание", reply_markup=markup)
-
+    #
     elif ms_text == "1":
         name = "Елена"
         bot.send_message(chat_id, text=name)
@@ -98,20 +98,20 @@ def get_text_message(message):
         name = "Елена"
         five_names = name * 4 + name
         bot.send_message(chat_id, text=five_names)
-    elif ms_text == "4":
-        pass
-    elif ms_text == "5":
-        pass
-    elif ms_text == "6":
-        pass
-    elif ms_text == "7":
-        pass
-    elif ms_text == "8":
-        pass
-    elif ms_text == "9":
-        pass
-    elif ms_text == "10":
-        pass
+    # elif ms_text == "4":
+    #
+    # elif ms_text == "5":
+    #     pass
+    # elif ms_text == "6":
+    #     pass
+    # elif ms_text == "7":
+    #     pass
+    # elif ms_text == "8":
+    #     pass
+    # elif ms_text == "9":
+    #     pass
+    # elif ms_text == "10":
+    #     pass
 
     else:
         bot.send_message(chat_id, text="Я вас слышу! Ваше сообщение: " + ms_text)
