@@ -1,14 +1,15 @@
 # Телеграм-бот v.002 - бот создаёт меню, присылает собачку, и анекдот
 # Ссылка на бот: t.me/Tyurina_Elena_1MD15_bot
 
-import telebot # pyTelegramBotAPI 4.3.1
+import telebot  # pyTelegramBotAPI 4.3.1
 from telebot import types
 import requests
 import bs4
 
 bot = telebot.TeleBot('5144148734:AAEL1qxIJIXxsHP7lkCwtL9Pb4cLHE3a4RM')
 
-#функция, обрабатывающая команду /start
+
+# функция, обрабатывающая команду /start
 @bot.message_handler(commands=["start"])
 def start(message, res=False):
     chat_id = message.chat.id
@@ -19,9 +20,9 @@ def start(message, res=False):
     markup.add(btn1, btn2)
 
     bot.send_message(chat_id,
-                     text = "Привет, {0.first_name}! Я - текстовый бот для курса "
-                            "программирования на языке Пайтон!".format(
-                         message.from_user), reply_markup=markup)
+                     text="Привет, {0.first_name}! Я - текстовый бот для курса программирования "
+                          "на языке Пайтон!".format(message.from_user), reply_markup=markup)
+
 
 # Получение сообщений от юзера
 @bot.message_handler(content_types=['text'])
@@ -114,6 +115,7 @@ def get_text_message(message):
     else:
         bot.send_message(chat_id, text="Я вас слышу! Ваше сообщение: " + ms_text)
 
+
 def get_anekdot():
     array_anekdots = []
     req_anek = requests.get('http://anekdotme.ru/random')
@@ -123,10 +125,18 @@ def get_anekdot():
         array_anekdots.append(result.getText().strip())
     return array_anekdots[0]
 
-def get_dog_picture():
 
+def get_wolf_quote():
+    randomize
+    array_quotes = []
+    req_quote = requests.get('https://statusas.ru/citaty-i-aforizmy/citaty-pro-zhivotnyx-i-zverej/citaty-i-memy-volka-auf.html')
+    soup = bs4.BeautifulSoup(req_anek.text, "html.parser")
+    result_find = soup.select('.entry_content')
+    for result in result_find:
+        array_anekdots.append(result.getText().strip())
     return array_anekdots[0]
 
-bot.polling(none_stop=True, interval=0) # Запускаем бота
+
+bot.polling(none_stop=True, interval=0)  # Запускаем бота
 
 print()
