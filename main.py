@@ -3,6 +3,8 @@
 
 import telebot # pyTelegramBotAPI 4.3.1
 from telebot import types
+import requests
+import bs4
 
 bot = telebot.TeleBot('5144148734:AAEL1qxIJIXxsHP7lkCwtL9Pb4cLHE3a4RM')
 
@@ -50,11 +52,7 @@ def get_text_message(message):
         bot.send_photo(message.chat.id, img)
 
     elif ms_text == "Прислать анекдот":
-        bot.send_message(chat_id, text="Заходит енот с ноутбуком в бар и заказывает виски. "
-                                       "Бармен остолбенел, но приносит виски строчащему "
-                                       "на ноутбуке еноту и говорит:\n— Вы… говорящий енот? "
-                                       "Никогда такого не видел!\n— Я недавно приехал. Работу вот ищу."
-                                       "\n— Может, вам в цирк работать пойти?\n— А зачем им программисты?")
+        bot.send_message(chat_id, text=get_anekdot())
 
     elif ms_text == "WEB-камера":
         bot.send_message(chat_id, text="Ещё не готово(((")
@@ -98,23 +96,36 @@ def get_text_message(message):
         name = "Елена"
         five_names = name * 4 + name
         bot.send_message(chat_id, text=five_names)
-    # elif ms_text == "4":
-    #
-    # elif ms_text == "5":
-    #     pass
-    # elif ms_text == "6":
-    #     pass
-    # elif ms_text == "7":
-    #     pass
-    # elif ms_text == "8":
-    #     pass
-    # elif ms_text == "9":
-    #     pass
-    # elif ms_text == "10":
-    #     pass
+    elif ms_text == "4":
+        pass
+    elif ms_text == "5":
+        pass
+    elif ms_text == "6":
+        pass
+    elif ms_text == "7":
+        pass
+    elif ms_text == "8":
+        pass
+    elif ms_text == "9":
+        pass
+    elif ms_text == "10":
+        pass
 
     else:
         bot.send_message(chat_id, text="Я вас слышу! Ваше сообщение: " + ms_text)
+
+def get_anekdot():
+    array_anekdots = []
+    req_anek = requests.get('http://anekdotme.ru/random')
+    soup = bs4.BeautifulSoup(req_anek.text, "html.parser")
+    result_find = soup.select('.anekdot_text')
+    for result in result_find:
+        array_anekdots.append(result.getText().strip())
+    return array_anekdots[0]
+
+def get_dog_picture():
+
+    return array_anekdots[0]
 
 bot.polling(none_stop=True, interval=0) # Запускаем бота
 
