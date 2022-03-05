@@ -5,6 +5,7 @@ import telebot  # pyTelegramBotAPI 4.3.1
 from telebot import types
 import requests
 import bs4
+from bs4 import BeautifulSoup
 import random
 
 bot = telebot.TeleBot('5144148734:AAEL1qxIJIXxsHP7lkCwtL9Pb4cLHE3a4RM')
@@ -45,7 +46,7 @@ def get_text_message(message):
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
         btn1 = types.KeyboardButton("Прислать собаку")
         btn2 = types.KeyboardButton("Прислать анекдот")
-        btn3 = types.KeyboardButton("Мудрость волка")
+        btn3 = types.KeyboardButton("Мудрость дня")
         back = types.KeyboardButton("Вернуться в главное меню")
         markup.add(btn1, btn2, btn3, back)
         bot.send_message(chat_id, text="Развлечения", reply_markup=markup)
@@ -57,8 +58,8 @@ def get_text_message(message):
     elif ms_text == "Прислать анекдот":
         bot.send_message(chat_id, text=get_anekdot())
 
-    elif ms_text == "Мудрость волка":
-        bot.send_message(chat_id, text=get_wolf_quote())
+    elif ms_text == "Мудрость дня":
+        bot.send_message(chat_id, text=get_wolf_quote() + "👆")
 
     elif ms_text == "WEB-камера":
         bot.send_message(chat_id, text="Ещё не готово(((")
@@ -138,9 +139,11 @@ def get_wolf_quote():
     soup = bs4.BeautifulSoup(req_quote.text, "html.parser")
     result_find = soup.find('div', class_='p-15 full-image').find('div', class_='entry-content').select('p')
     for result in result_find:
-        array_quotes.append(result.getText().strip())
+        if result.getText() != "":
+            array_quotes.append(result.getText().strip())
     count = random.randint(0, len(array_quotes)-1)
     return array_quotes[count]
+
 
 bot.polling(none_stop=True, interval=0)  # Запускаем бота
 
