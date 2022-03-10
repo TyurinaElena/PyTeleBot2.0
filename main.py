@@ -7,6 +7,7 @@ import requests
 import bs4
 from bs4 import BeautifulSoup
 import random
+import json
 
 bot = telebot.TeleBot('5144148734:AAEL1qxIJIXxsHP7lkCwtL9Pb4cLHE3a4RM')
 
@@ -52,14 +53,15 @@ def get_text_message(message):
         bot.send_message(chat_id, text="Развлечения", reply_markup=markup)
 
     elif ms_text == "/dog" or ms_text == "Прислать собаку":
-        img = open('dog1.jpeg', 'rb')
-        bot.send_photo(message.chat.id, img)
+        contents = requests.get('https://random.dog/woof.json').json()
+        urlDOG = contents['url']
+        bot.send_photo(chat_id, photo=urlDOG, caption="Вот тебе собачка!")
 
     elif ms_text == "Прислать анекдот":
         bot.send_message(chat_id, text=get_anekdot())
 
     elif ms_text == "Мудрость дня":
-        bot.send_message(chat_id, text=get_wolf_quote() + "👆")
+        bot.send_message(chat_id, text=get_wolf_quote() + "🐺")
 
     elif ms_text == "WEB-камера":
         bot.send_message(chat_id, text="Ещё не готово(((")
@@ -139,11 +141,10 @@ def get_wolf_quote():
     soup = bs4.BeautifulSoup(req_quote.text, "html.parser")
     result_find = soup.find('div', class_='p-15 full-image').find('div', class_='entry-content').select('p')
     for result in result_find:
-        if result.getText() != "":
+        if (result.getText() != "") and not ("http" in result.getText()):
             array_quotes.append(result.getText().strip())
-    count = random.randint(0, len(array_quotes)-1)
+    count = random.randint(1, len(array_quotes)-1)
     return array_quotes[count]
-
 
 bot.polling(none_stop=True, interval=0)  # Запускаем бота
 
