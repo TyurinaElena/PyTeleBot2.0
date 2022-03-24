@@ -5,7 +5,6 @@ import telebot  # pyTelegramBotAPI 4.3.1
 from telebot import types
 import requests
 import bs4
-from bs4 import BeautifulSoup
 import random
 import json
 
