@@ -94,6 +94,14 @@ def get_text_message(message):
         elif ms_text == "Задание 6":
             DZ.dz6(bot, chat_id)
 
+        elif ms_text == "Generate insult":
+            contents = requests.get('https://evilinsult.com/generate_insult.php?lang=en&type=json').json()
+            insult = contents['insult']
+            bot.send_message(chat_id, text=insult)
+
+        elif ms_text == "Мудрость дня":
+            bot.send_message(chat_id, text=get_wolf_quote() + "🐺")
+
     else:
         bot.send_message(chat_id, text="Извините, я не понимаю вашу команду: " + ms_text)
         goto_menu(chat_id, "Главное меню")
@@ -159,6 +167,17 @@ def get_dogURL():
         url = r.json()
         url = r_json['url']
     return url
+
+def get_wolf_quote():
+    array_quotes = []
+    req_quote = requests.get('https://statusas.ru/citaty-i-aforizmy/citaty-pro-zhivotnyx-i-zverej/citaty-i-memy-volka-auf.html')
+    soup = bs4.BeautifulSoup(req_quote.text, "html.parser")
+    result_find = soup.find('div', class_='p-15 full-image').find('div', class_='entry-content').select('p')
+    for result in result_find:
+        if (result.getText() != "") and not ("http" in result.getText()):
+            array_quotes.append(result.getText().strip())
+    count = random.randint(1, len(array_quotes)-1)
+    return array_quotes[count]
 
 
 
