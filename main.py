@@ -33,9 +33,9 @@ def get_text_message(message):
     chat_id = message.chat.id
     ms_text = message.text
 
-    result = goto_menu(chat_id,ms_text) # попробуем использовать текст, как команду меню, и войти в меню
+    result = goto_menu(chat_id, ms_text) # попробуем использовать текст, как команду меню, и войти в меню
     if result == True:
-        return #вошли в подменю, обработка не требуется
+        return # вошли в подменю, обработка не требуется
 
     if Menu.cur_menu != None and ms_text in Menu.cur_menu.buttons:
 
@@ -80,6 +80,15 @@ def get_text_message(message):
 
         elif ms_text == "Задание 6":
             DZ.dz6(bot, chat_id)
+
+        elif ms_text == "Задание 7":
+            DZ.dz7(bot, chat_id)
+
+        elif ms_text == "Задание 8":
+            DZ.dz8(bot, chat_id)
+
+        elif ms_text == "Задание 9":
+            DZ.dz9(bot, chat_id)
 
         elif ms_text == "Generate insult":
             bot.send_message(chat_id, text=gen_insult())
