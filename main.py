@@ -72,6 +72,15 @@ def get_text_message(message):
             goto_menu(chat_id, "Выход")
             return
 
+        elif ms_text == "Камень":
+            play_stone(bot, chat_id)
+
+        elif ms_text == "Ножницы":
+            play_scissors(bot, chat_id)
+
+        elif ms_text == "Бумага":
+            play_paper(bot, chat_id)
+
         elif ms_text == "Задание 1":
             DZ.dz1(bot, chat_id)
 
@@ -239,6 +248,45 @@ def gen_insult():
         # insult = translator.translate(contents['insult'], dest='ru')
         insult = contents['insult']
         return insult
+
+def play_stone(bot, chat_id):
+    all_actions = ["камень", "ножницы", "бумага"]
+    action = random.choice (all_actions)
+    if action == "камень":
+        bot.send_message(chat_id, text="Камень")
+        bot.send_message(chat_id, text="Ничья!")
+    elif action == "ножницы":
+        bot.send_message(chat_id, text="Ножницы")
+        bot.send_message(chat_id, text="Вы победили!")
+    else:
+        bot.send_message(chat_id, text="Бумага")
+        bot.send_message(chat_id, text="Вы проиграли! ")
+
+def play_scissors(bot, chat_id):
+    all_actions = ["камень", "ножницы", "бумага"]
+    action = random.choice(all_actions)
+    if action == "камень":
+        bot.send_message(chat_id, text="Камень")
+        bot.send_message(chat_id, text="Вы проиграли! ")
+    elif action == "ножницы":
+        bot.send_message(chat_id, text="Ножницы")
+        bot.send_message(chat_id, text="Ничья! ")
+    else:
+        bot.send_message(chat_id, text="Бумага")
+        bot.send_message(chat_id, text="Вы победили! ")
+
+def play_paper(bot, chat_id):
+    all_actions = ["камень", "ножницы", "бумага"]
+    action = random.choice (all_actions)
+    if action == "камень":
+        bot.send_message(chat_id, text="Камень")
+        bot.send_message(chat_id, text="Вы победили! ")
+    elif action == "ножницы":
+        bot.send_message(chat_id, text="Ножницы")
+        bot.send_message(chat_id, text="Вы проиграли! ")
+    else:
+        bot.send_message(chat_id, text="Бумага")
+        bot.send_message(chat_id, text="Ничья! ")
 
 
 bot.polling(none_stop=True, interval=0)  # Запускаем бота

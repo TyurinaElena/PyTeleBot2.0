@@ -21,7 +21,9 @@ class Card:
             self.code = card
 
             value = card[0]
-            if value == "J":
+            if value = "0":
+                self.value = "10"
+            elif value == "J":
                 self.value = "JACK"
             elif value == "Q":
                 self.value = "QUEEN"
@@ -29,18 +31,29 @@ class Card:
                 self.value = "KING"
             elif value == "A":
                 self.value = "ACE"
+            elif value == "X":
+                self.value = "JOKER"
             else:
                 self.value = value
 
             suit = card[1]
-            if suit == "S":
-                self.suit = "SPADES" # пики
-            elif suit == "C":
-                self.suit = "CLUBS" # крести
-            elif suit == "H":
-                self.suit = "HEARTS" # черви
-            elif suit == "D":
-                self.suit = "DIAMONDS" # буби
+
+            if suit == "1":
+                self.suit = ""
+                self.color = "BLACK"
+            elif suit == "2"
+                self.suit = ""
+                self.color = "RED"
+
+            else:
+                if suit == "S":
+                    self.suit = "SPADES" # пики
+                elif suit == "C":
+                    self.suit = "CLUBS" # крести
+                elif suit == "H":
+                    self.suit = "HEARTS" # черви
+                elif suit == "D":
+                    self.suit = "DIAMONDS" # буби
 
             self.cost = self.get_cost_card()
             self.color = self.get_color_card()
