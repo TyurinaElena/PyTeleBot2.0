@@ -92,6 +92,8 @@ def my_inputInt(bot, chat_id, txt, ResponseHandler):
 def my_inputInt_SecondPart(message, botQuestion, txtQuestion, ResponseHandler):
     chat_id = message.chat.id
     try:
+        if message.content_type != "text":
+            raise ValueError
         val = int(message.text)
         ResponseHandler(botQuestion, chat_id, val)
     except ValueError:

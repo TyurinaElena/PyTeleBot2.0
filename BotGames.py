@@ -1,5 +1,19 @@
 import requests
 
+
+activeGames = {} # для накапливания активных игр
+
+def newGame(chatID, newGame):
+    activeGames.update({chatID: newGame})
+    return newGame
+
+def getGame(chatID):
+    return activeGames.get(chatID)
+
+def stopGame(chatID):
+    activeGames.pop(chatID)
+
+
 class Card:
     emo_SPADES = "U0002660"
     emo_CLUBS = "U0002663"
@@ -21,7 +35,7 @@ class Card:
             self.code = card
 
             value = card[0]
-            if value = "0":
+            if value == "0":
                 self.value = "10"
             elif value == "J":
                 self.value = "JACK"
@@ -41,7 +55,7 @@ class Card:
             if suit == "1":
                 self.suit = ""
                 self.color = "BLACK"
-            elif suit == "2"
+            elif suit == "2":
                 self.suit = ""
                 self.color = "RED"
 
@@ -81,8 +95,8 @@ class Card:
             return "RED"
 
 class Game21:
-    def __init__(self, deck_count=1):
-        new_pack = self.new_pack(deck_count) # создаем новую пачку из
+    def __init__(self, deck_count=1, jokers_enabled=False):
+        new_pack = self.new_pack(deck_count, jokers_enabled) # создаем новую пачку из
         # deck-count-колод
         if new_pack is not None:
             self.pack_card = new_pack # сформированная колода
@@ -93,8 +107,9 @@ class Game21:
             self.status = None # статус игры: True - выигрыш, False - проигрыш
             # None - продолжается
 
-    def new_pack(self, deck_count):
-        response = requests.get(f"https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count={deck_count}")
+    def new_pack(self, deck_count, jokers_enabled=False):
+        txtJoker = "&jokers_enabled=true" if jokers_enabled else ""
+        response = requests.get(f"https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count={deck_count}" + txtJoker)
         # создание стопки карт из deck-count колод по 52 карты
         if response.status_code != 200:
             return None

@@ -11,7 +11,7 @@ from telebot import types
 import requests
 import bs4
 import BotGames # бот-игры
-from menuBot import Menu
+from menuBot import Menu, Users
 import DZ
 # import googletrans
 # from googletrans import Translator
@@ -21,23 +21,96 @@ bot = telebot.TeleBot('5144148734:AAEL1qxIJIXxsHP7lkCwtL9Pb4cLHE3a4RM')
 # функция, обрабатывающая команды
 @bot.message_handler(commands=["start"])
 def start(message, res=False):
+    chat_id = message.chat.id
+    bot.send_sticker(chat_id, "CAACAgIAAxkBAAIaeWJEeEmCvnsIzz36cM0oHU96QOn7AAJUAANBtVYMarf4xwiNAfojBA")
     txt_message = f"Привет, {message.from_user.first_name}! Я - текстовый бот для курса " \
                   f"программирования на языке Пайтон!"
-    bot.send_message(message.chat.id, text=txt_message, reply_markup=Menu.getMenu("Главное меню").markup)
+    bot.send_message(chat_id, text=txt_message, reply_markup=Menu.getMenu(chat_id, "Главное меню").markup)
+
+# получение стикеров от юзера
+@bot.message_handler(content_types=['sticker'])
+def get_messages(message):
+    chat_id = message.chat.id
+    bot.send_message(chat_id, "Это " + message.content_type)
+
+    sticker = message.sticker
+    bot.send_message(message.chat.id, sticker)
+
+# получение аудио от юзера
+@bot.message_handler(content_types=['audio'])
+def get_messages(message):
+    chat_id = message.chat.id
+    bot.send_message(chat_id, "Это " + message.content_type)
+
+    audio = message.audio
+    bot.send_message(chat_id, audio)
+
+# получение фото от юзера
+@bot.message_handler(content_types=['photo'])
+def get_messages(message):
+    chat_id = message.chat.id
+    bot.send_message(chat_id, "Это " + message.content_type)
+
+    photo = message.photo
+    bot.send_message(message.chat.id, photo)
+
+# получение видео от юзера
+@bot.message_handler(content_types=['video'])
+def get_messages(message):
+    chat_id = message.chat.id
+    bot.send_message(chat_id, "Это " + message.content_type)
+
+    video = message.sticker
+    bot.send_message(message.chat.id, video)
+
+# получение документов от юзера
+@bot.message_handler(content_types=['document'])
+def get_messages(message):
+    chat_id = message.chat.id
+    mime_type = message.document.mime_type
+    bot.send_message(chat_id, "Это " + message.content_type + " (" + mime_type + ")")
+
+    document = message.document
+    bot.send_message(message.chat.id, document)
+    if message.document.mime_type == "video/mp4":
+        bot.send_message(message.chat.id, "This is a GIF!")
+
+# получение координат от юзера
+@bot.message_handler(content_types=['location'])
+def get_messages(message):
+    chat_id = message.chat.id
+    bot.send_message(chat_id, "Это " + message.content_type)
+
+    location = message.location
+    bot.send_message(message.chat.id, location)
+
+# получение контактов от юзера
+@bot.message_handler(content_types=['contact'])
+def get_messages(message):
+    chat_id = message.chat.id
+    bot.send_message(chat_id, "Это " + message.content_type)
+
+    contact = message.contact
+    bot.send_message(message.chat.id, contact)
+
 
 # Получение сообщений от юзера
 @bot.message_handler(content_types=['text'])
 def get_text_message(message):
-    global game21
 
     chat_id = message.chat.id
     ms_text = message.text
+
+    cur_user = Users.getUser(chat_id)
+    if cur_user == None:
+        cur_user = Users(chat_id, message.json["from"])
 
     result = goto_menu(chat_id, ms_text) # попробуем использовать текст, как команду меню, и войти в меню
     if result == True:
         return # вошли в подменю, обработка не требуется
 
-    if Menu.cur_menu != None and ms_text in Menu.cur_menu.buttons:
+    cur_menu = Menu.getCurMenu(chat_id)
+    if cur_menu != None and ms_text in cur_menu.buttons: # относится ли команда к текущему меню
 
         if ms_text == ms_text == "Помощь":
             send_help(chat_id)
@@ -55,6 +128,7 @@ def get_text_message(message):
             get_ManOrNot(chat_id)
 
         elif ms_text == "Карту!":
+            game21 = BotGames.getGame(chat_id)
             if game21 == None:
                 goto_menu(chat_id, "Выход")
                 return
@@ -64,11 +138,12 @@ def get_text_message(message):
             bot.send_message(chat_id, text=text_game)
 
             if game21.status != None: #выход, если игра закончена
+                BotGames.stopGame(chat_id)
                 goto_menu(chat_id, "Выход")
                 return
 
         elif ms_text == "Стоп!":
-            game21 = None
+            BotGames.stopGame(chat_id)
             goto_menu(chat_id, "Выход")
             return
 
@@ -120,17 +195,17 @@ def callback_worker(call): # передать параметры
     pass
 
 def goto_menu(chat_id, name_menu): # получение нужного элемента меню
-    if name_menu == "Выход" and Menu.cur_menu != None and Menu.cur_menu.parent != None:
-        target_menu = Menu.getMenu(Menu.cur_menu.parent.name)
+    cur_menu = Menu.getCurMenu(chat_id)
+    if name_menu == "Выход" and cur_menu != None and cur_menu.parent != None:
+        target_menu = Menu.getMenu(chat_id, cur_menu.parent.name)
     else:
-        target_menu = Menu.getMenu(name_menu)
+        target_menu = Menu.getMenu(chat_id, name_menu)
 
     if target_menu != None:
         bot.send_message(chat_id, text=target_menu.name, reply_markup=target_menu.markup)
 
         if target_menu.name == "Игра в 21":
-            global game21
-            game21 = BotGames.Game21() #новый экземпляр игры
+            game21 = BotGames.newGame(chat_id, BotGames.Game21(jokers_enabled=True)) #новый экземпляр игры
             text_game = game21.get_cards(2) # просим 2 карты
             bot.send_media_group(chat_id, media=getMediaCards(game21))
             bot.send_message(chat_id, text=text_game)
@@ -154,6 +229,10 @@ def send_help(chat_id):
     markup.add(btn1)
     img = open('1МД15_Тюрина_Елена.jpg', 'rb')
     bot.send_photo(chat_id, img, reply_markup=markup)
+
+    bot.send_message(chat_id, "Активные пользователи чат-бота:")
+    for el in Users.activeUsers:
+        bot.send_message(chat_id, Users.activeUsers[el].getUserHTML(), parse_mode='HTML')
 
 def send_film(chat_id):
     film = get_randomFilm()
