@@ -11,12 +11,15 @@ from telebot import types
 import requests
 import bs4
 import BotGames # бот-игры
+import secret
 from menuBot import Menu, Users
 import DZ
+import secret
+from translate import Translator
 # import googletrans
 # from googletrans import Translator
 
-bot = telebot.TeleBot('5144148734:AAEL1qxIJIXxsHP7lkCwtL9Pb4cLHE3a4RM')
+bot = telebot.TeleBot(secret.TOKEN)
 
 # функция, обрабатывающая команды
 @bot.message_handler(commands=["start"])
@@ -323,10 +326,9 @@ def get_wolf_quote():
 
 def gen_insult():
         contents = requests.get('https://evilinsult.com/generate_insult.php?lang=en&type=json').json()
-        # translator = Translator()
-        # insult = translator.translate(contents['insult'], dest='ru')
-        insult = contents['insult']
-        return insult
+        translator = Translator(to_lang="ru")
+        translation = translator.translate(contents['insult'])
+        return translation
 
 def play_stone(bot, chat_id):
     all_actions = ["камень", "ножницы", "бумага"]
