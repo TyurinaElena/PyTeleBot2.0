@@ -384,7 +384,7 @@ def get_recipe(bot, chat_id):
         if r_json['meals'] != None:
             # bot.send_message(chat_id, text=r_json['meals'][0]['strMeal'])
             recipes = {}
-            
+
         else:
             bot.send_message(chat_id, text="Ничего не найдено! Попробуйте снова")
             input_text(bot, chat_id, "Введите ингредиент, а я пришлю Вам несколько рецептов!", res_handler)
