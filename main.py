@@ -16,8 +16,6 @@ from menuBot import Menu, Users
 import DZ
 import secret
 from translate import Translator
-# import googletrans
-# from googletrans import Translator
 
 bot = telebot.TeleBot(secret.TOKEN)
 
@@ -185,6 +183,9 @@ def get_text_message(message):
 
         elif ms_text == "Generate insult":
             bot.send_message(chat_id, text=gen_insult())
+
+        elif ms_text == "Подобрать рецепт":
+            get_recipe(bot, chat_id)
 
         elif ms_text == "Мудрость дня":
             bot.send_message(chat_id, text=get_wolf_quote() + "\U0001F43A")
@@ -369,6 +370,31 @@ def play_paper(bot, chat_id):
         bot.send_message(chat_id, text="Бумага")
         bot.send_message(chat_id, text="Ничья! ")
 
+def get_recipe(bot, chat_id):
+    def res_handler(massage):
+        ingredient = massage.text
+        translator = Translator(from_lang="ru", to_lang="en")
+        eng_ingredient = translator.translate(ingredient)
+        for a in eng_ingredient:
+            if a == " ":
+                a = "_"
+        req = requests.get(f'http://www.themealdb.com/api/json/v1/1/filter.php?i={eng_ingredient.lower()}')
+
+        r_json = req.json()
+        if r_json['meals'] != None:
+            # bot.send_message(chat_id, text=r_json['meals'][0]['strMeal'])
+            recipes = {}
+            
+        else:
+            bot.send_message(chat_id, text="Ничего не найдено! Попробуйте снова")
+            input_text(bot, chat_id, "Введите ингредиент, а я пришлю Вам несколько рецептов!", res_handler)
+
+    input_text(bot, chat_id, "Введите ингредиент, а я пришлю Вам несколько рецептов!", res_handler)
+
+
+def input_text(bot, chat_id, txt, ResponseHandler):
+    message = bot.send_message(chat_id, text=txt)
+    bot.register_next_step_handler(message, ResponseHandler)
 
 bot.polling(none_stop=True, interval=0)  # Запускаем бота
 
