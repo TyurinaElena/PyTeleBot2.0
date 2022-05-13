@@ -384,10 +384,36 @@ def get_recipe(bot, chat_id):
         if r_json['meals'] != None:
             # bot.send_message(chat_id, text=r_json['meals'][0]['strMeal'])
             recipes = {}
+            k = 0
+            while k != 3:
+                rand_num = random.randint(0, len(r_json['meals'])-1)
+                if r_json['meals'][rand_num] not in recipes.values():
+                    recipes[k] = r_json['meals'][rand_num]
+                    k = k+1
+            bot.send_message(chat_id, text="Вот, что я для Вас нашла:")
+            translator = Translator(to_lang="ru")
+            for recipe in recipes.values():
+                id_recipe = requests.get(f'http://www.themealdb.com/api/json/v1/1/lookup.php?i={recipe["idMeal"]}')
+                id_r_json = id_recipe.json()
+                id_r_str = f"{translator.translate(id_r_json['meals'][0]['strMeal'])}:\n\nИнгредиенты:\n"
+                for i in range(20):
+                    if id_r_json['meals'][0][f'strIngredient{i+1}'] == "" or id_r_json['meals'][0][f'strIngredient{i+1}'] == None:
+                        break
+                    id_r_str = id_r_str + f"{id_r_json['meals'][0][f'strIngredient{i+1}']}" \
+                                          f" - {id_r_json['meals'][0][f'strMeasure{i+1}']}\n"
+                instructions = translator.translate(f"{id_r_json['meals'][0]['strInstructions']}")
+                id_r_str = translator.translate(id_r_str).lower()
+                bot.send_message(chat_id, text=id_r_str)
+                if len(instructions) > 500:
+                    bot.send_message(chat_id, text=instructions[:500])
+                    bot.send_message(chat_id, text=instructions[500:])
+
+                bot.send_photo(chat_id, photo=id_r_json['meals'][0]['strMealThumb'])
+
 
         else:
-            bot.send_message(chat_id, text="Ничего не найдено! Попробуйте снова")
-            input_text(bot, chat_id, "Введите ингредиент, а я пришлю Вам несколько рецептов!", res_handler)
+                bot.send_message(chat_id, text="Ничего не найдено! Попробуйте снова")
+                input_text(bot, chat_id, "Введите ингредиент, а я пришлю Вам несколько рецептов!", res_handler)
 
     input_text(bot, chat_id, "Введите ингредиент, а я пришлю Вам несколько рецептов!", res_handler)
 
