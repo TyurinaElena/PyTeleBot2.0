@@ -401,13 +401,16 @@ def get_recipe(bot, chat_id):
                         break
                     id_r_str = id_r_str + f"{id_r_json['meals'][0][f'strIngredient{i+1}']}" \
                                           f" - {id_r_json['meals'][0][f'strMeasure{i+1}']}\n"
-                instructions = translator.translate(f"{id_r_json['meals'][0]['strInstructions']}")
+                instructions = f"{id_r_json['meals'][0]['strInstructions']}"
+                if len(instructions) > 500:
+                    instructions = translator.translate(instructions[:500])
+                    instructions = instructions + translator.translate(instructions[500:])
+                else:
+                    instructions = translator.translate(instructions)
+
                 id_r_str = translator.translate(id_r_str).lower()
                 bot.send_message(chat_id, text=id_r_str)
-                if len(instructions) > 500:
-                    bot.send_message(chat_id, text=instructions[:500])
-                    bot.send_message(chat_id, text=instructions[500:])
-
+                bot.send_message(chat_id, text=instructions)
                 bot.send_photo(chat_id, photo=id_r_json['meals'][0]['strMealThumb'])
 
 
