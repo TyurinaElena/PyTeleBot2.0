@@ -16,6 +16,7 @@ from menuBot import Menu, Users
 import DZ
 import secret
 from translate import Translator
+import re
 
 bot = telebot.TeleBot(secret.TOKEN)
 
@@ -375,9 +376,10 @@ def get_recipe(bot, chat_id):
         ingredient = massage.text
         translator = Translator(from_lang="ru", to_lang="en")
         eng_ingredient = translator.translate(ingredient)
-        for a in eng_ingredient:
-            if a == " ":
-                a = "_"
+        eng_ingredient = re.sub("\s", "-", eng_ingredient)
+        # for a in eng_ingredient:
+        #     if a == " ":
+        #         a = "_"
         req = requests.get(f'http://www.themealdb.com/api/json/v1/1/filter.php?i={eng_ingredient.lower()}')
 
         r_json = req.json()
@@ -401,17 +403,10 @@ def get_recipe(bot, chat_id):
                         break
                     id_r_str = id_r_str + f"{id_r_json['meals'][0][f'strIngredient{i+1}']}" \
                                           f" - {id_r_json['meals'][0][f'strMeasure{i+1}']}\n"
-                instructions = f"{id_r_json['meals'][0]['strInstructions']}"
-                if len(instructions) > 500:
-                    instructions = translator.translate(instructions[:500])
-                    instructions = instructions + translator.translate(instructions[500:])
-                else:
-                    instructions = translator.translate(instructions)
 
-                id_r_str = translator.translate(id_r_str).lower()
+                id_r_str = translator.translate(id_r_str)
+                id_r_str = id_r_str + "\n" + id_r_json['meals'][0]["strYoutube"]
                 bot.send_message(chat_id, text=id_r_str)
-                bot.send_message(chat_id, text=instructions)
-                bot.send_photo(chat_id, photo=id_r_json['meals'][0]['strMealThumb'])
 
 
         else:
