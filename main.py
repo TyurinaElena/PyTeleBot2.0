@@ -17,6 +17,7 @@ import DZ
 import secret
 from translate import Translator
 import re
+import xml.etree.ElementTree as ET
 
 bot = telebot.TeleBot(secret.TOKEN)
 
@@ -158,6 +159,22 @@ def get_text_message(message):
         elif ms_text == "Бумага":
             play_paper(bot, chat_id)
 
+        elif ms_text == "Викторина Multiplayer":
+            keyboard = types.InlineKeyboardMarkup()
+            btn = types.InlineKeyboardButton(text="Создать новую игру", callback_data="QuizM|newGame")
+            keyboard.add(btn)
+            numGame = 0
+            for game in botGames.activeGames.values():
+                if type(game) == botGames.Quiz_Multiplayer:
+                    numGame += 1
+                    btn = types.InlineKeyboardButton(text="Викторина: " + str(numGame) + ", игроков: " + str(len(game.players)), callback_data="QuizM|Join|" + menuBot.Menu.setExtPar(game))
+                    keyboard.add(btn)
+            btn = types.InlineKeyboardButton(text="Вернуться", callback_data="QuizM|Exit")
+            keyboard.add(btn)
+
+            bot.send_message(chat_id, text=botGames.Quiz_Multiplayer.name, reply_markup=types.ReplyKeyboardRemove())
+            bot.send_message(chat_id, "Вы хотите начать новую игру, или присоединиться к существующей?", reply_markup=keyboard)
+
         elif ms_text == "Задание 1":
             DZ.dz1(bot, chat_id)
 
@@ -182,14 +199,14 @@ def get_text_message(message):
         elif ms_text == "Задание 9":
             DZ.dz9(bot, chat_id)
 
-        elif ms_text == "Generate insult":
-            bot.send_message(chat_id, text=gen_insult())
-
         elif ms_text == "Подобрать рецепт":
             get_recipe(bot, chat_id)
 
         elif ms_text == "Мудрость дня":
             bot.send_message(chat_id, text=get_wolf_quote() + "\U0001F43A")
+
+        elif ms_text == "quiz":
+            bot.send_message(chat_id, text=quiz())
 
     else:
         bot.send_message(chat_id, text="Извините, я не понимаю вашу команду: " + ms_text)
@@ -319,18 +336,27 @@ def get_wolf_quote():
     array_quotes = []
     req_quote = requests.get('https://statusas.ru/citaty-i-aforizmy/citaty-pro-zhivotnyx-i-zverej/citaty-i-memy-volka-auf.html')
     soup = bs4.BeautifulSoup(req_quote.text, "html.parser")
-    result_find = soup.find('div', class_='p-15 full-image').find('div', class_='entry-content').select('p')
+    result_find = soup.find('div', class_='entry-content').select('p')
     for result in result_find:
         if (result.getText() != "") and not ("http" in result.getText()):
             array_quotes.append(result.getText().strip())
     count = random.randint(1, len(array_quotes)-1)
     return array_quotes[count]
 
-def gen_insult():
-        contents = requests.get('https://evilinsult.com/generate_insult.php?lang=en&type=json').json()
-        translator = Translator(to_lang="ru")
-        translation = translator.translate(contents['insult'])
-        return translation
+def quiz():
+    req = requests.get('https://db.chgk.info/')
+    if req.status_code == 200:
+        soup = bs4.BeautifulSoup(req.text, "html.parser")
+        result_find = soup.select('.random_question')
+        whole_text = result_find[1].getText()
+        question = re.search(r'Вопрос [0-9]:(.*)Ответ', whole_text, re.DOTALL)
+        question = question.group(0).replace('Вопрос 2: ', '')
+        question = question.replace('\nОтвет', '')
+        return question
+    else:
+        return ""
+
+# .find('div', class_='content').find('div', class_='random-results').select('div', class_='random_question').select('strong')
 
 def play_stone(bot, chat_id):
     all_actions = ["камень", "ножницы", "бумага"]
