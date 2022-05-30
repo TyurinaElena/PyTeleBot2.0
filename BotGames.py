@@ -257,8 +257,8 @@ class Quiz_Multiplayer:
         if self.gameTimeLeft > 0:
             self.setTextGame()
             self.sendMessagesAllPlayers()
-            self.gameTimeLeft -= 1
-            self.objTimer = threading.Timer(1, self.looper)
+            self.gameTimeLeft -= 3
+            self.objTimer = threading.Timer(3, self.looper)
             self.objTimer.start()
         else:
             for player in self.players.values():
@@ -296,6 +296,8 @@ class Quiz_Multiplayer:
                     player.result = "+"
                 else:
                     player.result = "-"
+            else:
+                player.result = "-"
 
         self.round_text += f"\nРаунд закончен!\nПравильный ответ: {self.right_answer}\nКомментарий: {self.comment}\n"
         if self.roundNumber < 10:
@@ -309,7 +311,7 @@ class Quiz_Multiplayer:
                 player.answer = None
                 player.result = ""
             if len(self.players) > 0:  # начинаем новый раунд через 30 секунд
-                self.objTimer = threading.Timer(30, self.newRound())
+                self.objTimer = threading.Timer(30, self.newRound)
                 self.objTimer.start()
         else:
             winners = self.findWinner
@@ -337,7 +339,7 @@ class Quiz_Multiplayer:
                 player.result = ""
                 player.scores = 0
             if len(self.players) > 0:  # начинаем новую игру через 60 секунд
-                self.objTimer = threading.Timer(60, self.newRound())
+                self.objTimer = threading.Timer(60, self.newRound)
                 self.objTimer.start()
             else:
                 stopGame(self.id)
@@ -380,7 +382,7 @@ class Quiz_Multiplayer:
                     textIndividual = f"\n Ваш ответ: {player.answer}, ждём остальных!" if player.answer is not None else "\n"
                     msg = self.objBot.edit_message_text(self.textGame + textIndividual, chat_id=player.id, message_id=player.gameMessage.id,
                                                      reply_markup=player.gameMessage.reply_markup)
-                    bot.register_next_step_handler(msg, getPlayerAnswer)
+                    self.objBot.register_next_step_handler(msg, getPlayerAnswer)
         except:
             pass
 
