@@ -1,5 +1,9 @@
 import requests
 import re
+import threading
+from telebot import types
+import menuBot
+import bs4
 
 activeGames = {} # для накапливания активных игр
 
@@ -156,7 +160,7 @@ class Game21:
 
 class Quiz_Multiplayer:
     round_duration = 60  # сек.
-    name = "ЧГК (Мультиплеер)"
+    name = "Что? Где? Когда? (Мультиплеер)"
     text_rules = "<b>Игрокам будет представлено 10 вопросов. На ответ даётся 60 секунд, за " \
                  "правильный ответ игроку начисляется 1 балл.Победителем считается игрок, набравший наибольшее" \
                  "количество очков.\n"
@@ -183,33 +187,24 @@ class Quiz_Multiplayer:
         self.objTimer = None
         self.winner = None
         self.textGame = ""
-        self.numberPlayers = 0
-        self.addPlayer(chat_user.id, chat_user.userName)
         self.right_answer = ""
+        self.comment = ""
+        self.question = ""
         self.round_text = ""
+        self.addPlayer(chat_user.id, chat_user.userName)
 
     def addPlayer(self, playerID, playerName):
         newPlayer = self.Player(playerID, playerName)
         self.players[playerID] = newPlayer
-        self.numberPlayers += 1
-        if self.numberPlayers > 1:
-            self.startTimer()
-            self.setTextGame()
-            list_btn = []
-            list_btn = types.InlineKeyboardButton(text="Выход",
-                                                  callback_data="QuizM|Exit|" + Menu.setExtPar(self))
-            keyboard.add(list_btn)
-            gameMessage = self.objBot.send_message(playerID, text=self.textGame, reply_markup=keyboard)
-            self.players[playerID].gameMessage = gameMessage
-            self.sendMessagesAllPlayers([playerID])  # отправим всем остальным игрокам информацию о новом игроке
-        else:
-            list_btn = []
-            list_btn = types.InlineKeyboardButton(text="Выход",
-                                                  callback_data="QuizM|Exit|" + Menu.setExtPar(self))
-            keyboard.add(list_btn)
-            gameMessage = self.objBot.send_message(playerID, text=self.textGame + "Пожалуйста, подождите, пока не "
-                                                                                  "присоединится кто-нибудь ещё!", reply_markup=keyboard)
-            self.players[playerID].gameMessage = gameMessage
+        keyboard = types.InlineKeyboardMarkup()
+        self.setTextGame()
+        list_btn = types.InlineKeyboardButton(text="Выход",
+                                              callback_data="QuizM|Exit|" + menuBot.Menu.setExtPar(self))
+        keyboard.add(list_btn)
+        gameMessage = self.objBot.send_message(playerID, text=self.textGame, reply_markup=keyboard)
+        self.players[playerID].gameMessage = gameMessage
+        self.sendMessagesAllPlayers([playerID])  # отправим всем остальным игрокам информацию о новом игроке
+        self.newRound()
         return newPlayer
 
     def delPlayer(self, playerID):
@@ -219,7 +214,7 @@ class Quiz_Multiplayer:
         except:
             pass
         self.objBot.send_message(chat_id=remotePlayer.id, text="Вы вышли из игры!")
-        goto_menu(self.objBot, remotePlayer.id, "Игры")
+        menuBot.goto_menu(self.objBot, remotePlayer.id, "Игры")
         if len(self.players.values()) == 0:
             stopGame(self.id)
 
@@ -230,25 +225,32 @@ class Quiz_Multiplayer:
         self.roundNumber += 1
         for player in self.players.values():
             player.answer = None
-        self.startTimer()  # запустим таймер игры (если таймер активен, сбросим его)
-        self.round_text = f"Вопрос{self.roundNumber}:\n"
-        req = requests.get('https://db.chgk.info/')
+        self.round_text = f"Вопрос{self.roundNumber}:"
+        req = requests.get('https://db.chgk.info/random/types1/1540754759')
         if req.status_code == 200:
             soup = bs4.BeautifulSoup(req.text, "html.parser")
             result_find = soup.select('.random_question')
             whole_text = result_find[1].getText()
+            question = re.search(r'Вопрос [0-9]:(.*)Ответ', whole_text, re.DOTALL)
+            answer = re.search(r'Ответ(.*)Комментарий', whole_text, re.DOTALL)
+            comment = re.search(r'Комментарий:(.*)Источник', whole_text, re.DOTALL)
+            if (question == None) or (answer == None) or (comment == None):
+                self.roundNumber -= 1
+                self.newRound()
+                return
+            question = question.group(0).replace('Вопрос 2: ', '')
+            question = question.replace('\n\nОтвет', '')
+            self.question = question
+            answer = answer.group(0).replace('Ответ: ', '')
+            answer = answer.replace('\n\nКомментарий', '')
+            self.right_answer = answer[:-1]
+            comment = comment.group(0).replace('Комментарий: ', '')
+            comment = comment.replace('\n\nИсточник', '')
+            self.comment = comment
+            self.round_text = self.round_text + question
+            self.startTimer()  # запустим таймер игры (если таймер активен, сбросим его)
         else:
             return ""
-        question = re.search(r'Вопрос [0-9]:(.*)Ответ', whole_text, re.DOTALL)
-        question = question.group(0).replace('Вопрос 2: ', '')
-        question = question.replace('\nОтвет', '')
-
-        answer = re.search(r'Ответ:(.*)Комментарий', whole_text, re.DOTALL)
-        answer = answer.group(0).replace('Ответ: ', '')
-        answer = answer.replace('\nКомментарий', '')
-        self.right_answer = answer
-
-        self.round_text = self.round_text + question
 
     def looper(self):
         print("LOOP", self.objTimer)
@@ -261,7 +263,7 @@ class Quiz_Multiplayer:
         else:
             for player in self.players.values():
                 if player.answer is None:
-                    player.answer = "Ответа нет"
+                    player.answer = "Нет ответа"
             self.findRoundResults()
 
     def startTimer(self):
@@ -277,43 +279,81 @@ class Quiz_Multiplayer:
             self.objTimer.cancel()
             self.objTimer = None
 
-    @classmethod
+   # def checkEndRound(self):
+   #     isEndRound = True
+   #     for player in self.players.values():
+   #         isEndRound = isEndRound and player.answer != None
+   #     return isEndRound
 
-
-    def checkEndRound(self):
-        isEndRound = True
-        for player in self.players.values():
-            isEndRound = isEndRound and player.answer != None
-        return isEndRound
-
-    # def playerAnswer(self, chat_userID, answer):
-    #     player = self.getPlayer(chat_userID)
-    #     player.answer = answer
-    #     self.findWiner()
-    #     self.sendMessagesAllPlayers()
 
     def findRoundResults(self):
-        if self.checkEndRound():
-            self.stopTimer()  # все успели сделать ход, таймер выключаем
-            for player in self.players.values():
+        # if self.checkEndRound():
+        self.stopTimer()
+        for player in self.players.values():
+            if player.answer != "Нет ответа":
                 if player.answer == self.right_answer:
                     player.scores += 1
                     player.result = "+"
                 else:
                     player.result = "-"
 
+        self.round_text += f"\nРаунд закончен!\nПравильный ответ: {self.right_answer}\nКомментарий: {self.comment}\n"
         if self.roundNumber < 10:
-            self.round_text = "Раунд закончен! Перерыв на 30 секунд"
+            self.round_text += "Перерыв на 30 секунд"
             self.setTextGame()
+            for player in self.players.values():
+                self.objBot.edit_message_text(self.textGame, chat_id=player.id,
+                                          message_id=player.gameMessage.id,
+                                          reply_markup=player.gameMessage.reply_markup)
             for player in self.players.values():
                 player.answer = None
                 player.result = ""
-                player.gameMessage = None
-            if self.checkEndGame() and len(self.players) > 0:  # начинаем новый раунд через 30 секунд
+            if len(self.players) > 0:  # начинаем новый раунд через 30 секунд
                 self.objTimer = threading.Timer(30, self.newRound())
                 self.objTimer.start()
         else:
-            self.findWiner
+            winners = self.findWinner
+            if len(winners) == 0:
+                self.round_text += "\nИгра окончена! К сожалению, победителей нет."
+            else:
+                self.round_text += "\nИгра окончена! Победители: "
+                for player in winners.values():
+                    self.round_text += player.name + ", "
+                self.round_text = self.round_text[:-2]
+            self.round_text += "\nСледующая игра начнётся через минуту"
+            self.setTextGame()
+            for player in self.players.values():
+                self.objBot.edit_message_text(self.textGame, chat_id=player.id,
+                                          message_id=player.gameMessage.id,
+                                          reply_markup=player.gameMessage.reply_markup)
+            self.roundNumber = 0
+            self.gameTimeLeft = 0
+            self.objTimer = None
+            self.textGame = ""
+            self.right_answer = ""
+            self.round_text = ""
+            for player in self.players.values():
+                player.answer = None
+                player.result = ""
+                player.scores = 0
+            if len(self.players) > 0:  # начинаем новую игру через 60 секунд
+                self.objTimer = threading.Timer(60, self.newRound())
+                self.objTimer.start()
+            else:
+                stopGame(self.id)
+
+    def findWinner(self):
+        max = 0
+        for player in self.players.values():
+            if player.scores > max:
+                max = player.scores
+        winners = list()
+        if max > 0:
+            for player in self.players.values():
+                if player.scores == max:
+                    winners.append(player)
+        return winners
+
 
     def setTextGame(self):
         from prettytable import PrettyTable
@@ -323,27 +363,34 @@ class Quiz_Multiplayer:
             mytable.add_row(
                 [player.name, player.scores, player.result])
 
-        textGame = self.text_rules + "\n\n"
-        textGame += "<code>" + mytable.get_string() + "</code>" + "\n\n"
+        textGame = self.text_rules + "\n"
+        textGame += mytable.get_string() + "\n\n"
         textGame += self.round_text
+        if self.gameTimeLeft > 0:
+            textGame += f"\nИдёт игра... Осталось времени для выбора: {self.gameTimeLeft}\n"
 
         self.textGame = textGame
 
-    
+
 
     def sendMessagesAllPlayers(self, excludingPlayers=()):
         try:
             for player in self.players.values():
                 if player.id not in excludingPlayers:
                     textIndividual = f"\n Ваш ответ: {player.answer}, ждём остальных!" if player.answer is not None else "\n"
-                    massage_sent = self.objBot.edit_message_text(self.textGame + textIndividual, chat_id=player.id, message_id=player.gameMessage.id,
+                    msg = self.objBot.edit_message_text(self.textGame + textIndividual, chat_id=player.id, message_id=player.gameMessage.id,
                                                      reply_markup=player.gameMessage.reply_markup)
-                    if player.answer is None:
-                        bot.register_next_step_handler(message_sent, getAnswer, player)
+                    bot.register_next_step_handler(msg, getPlayerAnswer)
         except:
             pass
-        def getAnswer(message, player):
-            player.answer = message.text
+
+        def getPlayerAnswer(msg):
+            player_id = msg.chat.id
+            self.players[player_id].answer = msg.text
+
+        # def getAnswer(message, player):
+        #     player.answer = message.text
+
 
 # -----------------------------------------------------------------------
 def callback_worker(bot, cur_user, cmd, par, call):
@@ -359,7 +406,7 @@ def callback_worker(bot, cur_user, cmd, par, call):
     elif cmd == "Join":
         # bot.edit_message_reply_markup(chat_id, message_id, reply_markup=None)  # удалим кнопки начала игры из чата
         bot.delete_message(chat_id, message_id)
-        QuizMult = Menu.getExtPar(par)
+        QuizMult = menuBot.Menu.getExtPar(par)
         if QuizMult is None:  # если наткнулись на кнопку, которой быть не должно
             return
         else:
@@ -368,20 +415,11 @@ def callback_worker(bot, cur_user, cmd, par, call):
 
     elif cmd == "Exit":
         bot.delete_message(chat_id, message_id)
-        QuizMult = Menu.getExtPar(par)
+        QuizMult = menuBot.Menu.getExtPar(par)
         if QuizMult is not None:
             QuizMult.delPlayer(cur_user.id)
-        goto_menu(bot, chat_id, "Игры")
+        menuBot.goto_menu(bot, chat_id, "Игры")
         bot.answer_callback_query(call.id)
-
-    # elif "Choice-" in cmd:
-    #     QuizMult = Menu.getExtPar(par)
-    #     if QuizMult is None:  # если наткнулись на кнопку, которой быть не должно - удалим её из чата
-    #         bot.delete_message(chat_id, message_id)
-    #     else:
-    #         choice = cmd[7:]
-    #         QuizMult.playerChoice(cur_user.id, choice)
-    #     bot.answer_callback_query(call.id)
 
 # -----------------------------------------------------------------------
 

@@ -1,3 +1,4 @@
+
 name = "Елена"
 age = 20
 # uname = ""
@@ -33,7 +34,6 @@ def dz6(bot, chat_id):
                                                                            f"Задом наперёд: {user_name.text[::-1]}\n"
                                                                            f"Первые пять: {user_name.text[:5]}")
     my_input(bot, chat_id, "Введите Ваше имя", dz6_ResponseHandler)
-
 
 def dz7(bot, chat_id):
     def dz7_ResponseHandler1(user_name):

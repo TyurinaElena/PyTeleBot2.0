@@ -12,12 +12,12 @@ import requests
 import bs4
 import BotGames # бот-игры
 import secret
+import menuBot
 from menuBot import Menu, Users
 import DZ
 import secret
 from translate import Translator
 import re
-import xml.etree.ElementTree as ET
 
 bot = telebot.TeleBot(secret.TOKEN)
 
@@ -99,7 +99,7 @@ def get_messages(message):
 
 # Получение сообщений от юзера
 @bot.message_handler(content_types=['text'])
-def get_text_message(message):
+def get_text_messages(message):
 
     chat_id = message.chat.id
     ms_text = message.text
@@ -108,9 +108,16 @@ def get_text_message(message):
     if cur_user == None:
         cur_user = Users(chat_id, message.json["from"])
 
-    result = goto_menu(chat_id, ms_text) # попробуем использовать текст, как команду меню, и войти в меню
-    if result == True:
-        return # вошли в подменю, обработка не требуется
+    subMenu = menuBot.goto_menu(bot, chat_id, ms_text)  # попытаемся использовать текст как команду меню, и войти в него
+    if subMenu != None:
+        # Проверим, нет ли обработчика для самого меню. Если есть - выполним нужные команды
+        if subMenu.name == "Игра в 21":
+            game21 = BotGames.newGame(chat_id, BotGames.Game21(jokers_enabled=True))  # создаём новый экземпляр игры
+            text_game = game21.get_cards(2)  # просим 2 карты в начале игры
+            bot.send_media_group(chat_id, media=getMediaCards(game21))  # получим и отправим изображения карт
+            bot.send_message(chat_id, text=text_game)
+
+        return
 
     cur_menu = Menu.getCurMenu(chat_id)
     if cur_menu != None and ms_text in cur_menu.buttons: # относится ли команда к текущему меню
@@ -133,7 +140,7 @@ def get_text_message(message):
         elif ms_text == "Карту!":
             game21 = BotGames.getGame(chat_id)
             if game21 == None:
-                goto_menu(chat_id, "Выход")
+                menuBot.goto_menu(bot, chat_id, "Выход")
                 return
 
             text_game = game21.get_cards(1)
@@ -142,12 +149,12 @@ def get_text_message(message):
 
             if game21.status != None: #выход, если игра закончена
                 BotGames.stopGame(chat_id)
-                goto_menu(chat_id, "Выход")
+                menuBot.goto_menu(bot, chat_id, "Выход")
                 return
 
         elif ms_text == "Стоп!":
             BotGames.stopGame(chat_id)
-            goto_menu(chat_id, "Выход")
+            menuBot.goto_menu(bot, chat_id, "Выход")
             return
 
         elif ms_text == "Камень":
@@ -159,20 +166,20 @@ def get_text_message(message):
         elif ms_text == "Бумага":
             play_paper(bot, chat_id)
 
-        elif ms_text == "Викторина Multiplayer":
+        elif ms_text == "ЧГК Multiplayer":
             keyboard = types.InlineKeyboardMarkup()
             btn = types.InlineKeyboardButton(text="Создать новую игру", callback_data="QuizM|newGame")
             keyboard.add(btn)
             numGame = 0
-            for game in botGames.activeGames.values():
-                if type(game) == botGames.Quiz_Multiplayer:
+            for game in BotGames.activeGames.values():
+                if type(game) == BotGames.Quiz_Multiplayer:
                     numGame += 1
-                    btn = types.InlineKeyboardButton(text="Викторина: " + str(numGame) + ", игроков: " + str(len(game.players)), callback_data="QuizM|Join|" + menuBot.Menu.setExtPar(game))
+                    btn = types.InlineKeyboardButton(text="Игра: " + str(numGame) + ", игроков: " + str(len(game.players)), callback_data="QuizM|Join|" + menuBot.Menu.setExtPar(game))
                     keyboard.add(btn)
             btn = types.InlineKeyboardButton(text="Вернуться", callback_data="QuizM|Exit")
             keyboard.add(btn)
 
-            bot.send_message(chat_id, text=botGames.Quiz_Multiplayer.name, reply_markup=types.ReplyKeyboardRemove())
+            bot.send_message(chat_id, text=BotGames.Quiz_Multiplayer.name, reply_markup=types.ReplyKeyboardRemove())
             bot.send_message(chat_id, "Вы хотите начать новую игру, или присоединиться к существующей?", reply_markup=keyboard)
 
         elif ms_text == "Задание 1":
@@ -210,31 +217,24 @@ def get_text_message(message):
 
     else:
         bot.send_message(chat_id, text="Извините, я не понимаю вашу команду: " + ms_text)
-        goto_menu(chat_id, "Главное меню")
+        menuBot.goto_menu(bot, chat_id, "Главное меню")
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_worker(call): # передать параметры
-    pass
+    chat_id = call.message.chat.id
+    message_id = call.message.id
+    cur_user = Users.getUser(chat_id)
+    if cur_user == None:
+        cur_user = Users(chat_id, call.message.json["from"])
 
-def goto_menu(chat_id, name_menu): # получение нужного элемента меню
-    cur_menu = Menu.getCurMenu(chat_id)
-    if name_menu == "Выход" and cur_menu != None and cur_menu.parent != None:
-        target_menu = Menu.getMenu(chat_id, cur_menu.parent.name)
-    else:
-        target_menu = Menu.getMenu(chat_id, name_menu)
+    tmp = call.data.split("|")
+    menu = tmp[0] if len(tmp) > 0 else ""
+    cmd = tmp[1] if len(tmp) > 1 else ""
+    par = tmp[2] if len(tmp) > 2 else ""
 
-    if target_menu != None:
-        bot.send_message(chat_id, text=target_menu.name, reply_markup=target_menu.markup)
+    if menu == "QuizM":
+        BotGames.callback_worker(bot, cur_user, cmd, par, call)
 
-        if target_menu.name == "Игра в 21":
-            game21 = BotGames.newGame(chat_id, BotGames.Game21(jokers_enabled=True)) #новый экземпляр игры
-            text_game = game21.get_cards(2) # просим 2 карты
-            bot.send_media_group(chat_id, media=getMediaCards(game21))
-            bot.send_message(chat_id, text=text_game)
-
-        return True
-    else:
-        return False
 
 def getMediaCards(game21):
     medias = []
@@ -295,13 +295,16 @@ def get_ManOrNot(chat_id):
     global bot
 
     markup = types.InlineKeyboardMarkup()
-    btn1 = types.InlineKeyboardButton(text="Проверить", url="https://vc.ru/dev/58543-thispersondoesnotexist-sayt-generator-realistichnyh-lic")
+    btn1 = types.InlineKeyboardButton(text="Проверить",
+                                      url="https://vc.ru/dev/58543-thispersondoesnotexist-sayt-generator-realistichnyh-lic")
     markup.add(btn1)
 
     req = requests.get("https://thispersondoesnotexist.com/image", allow_redirects=True)
     if req.status_code == 200:
         img = BytesIO(req.content)
         bot.send_photo(chat_id, photo=img, reply_markup=markup, caption="Этот человек реален?")
+    else:
+        bot.send_message(chat_id, text="Извините, что-то пошло не так")
 
 def get_randomFilm():
     url = 'https://randomfilm.ru/'
@@ -344,15 +347,21 @@ def get_wolf_quote():
     return array_quotes[count]
 
 def quiz():
-    req = requests.get('https://db.chgk.info/')
+    req = requests.get('https://db.chgk.info/random/types1/1540754759')
     if req.status_code == 200:
         soup = bs4.BeautifulSoup(req.text, "html.parser")
         result_find = soup.select('.random_question')
         whole_text = result_find[1].getText()
-        question = re.search(r'Вопрос [0-9]:(.*)Ответ', whole_text, re.DOTALL)
-        question = question.group(0).replace('Вопрос 2: ', '')
-        question = question.replace('\nОтвет', '')
-        return question
+        answer = re.search(r'Ответ:(.*)Комментарий', whole_text, re.DOTALL)
+        answer = answer.group(0).replace('Ответ: ', '')
+        answer = answer.replace('\n\nКомментарий', '')
+        return answer
+        # question = re.search(r'Вопрос 2:(.*)Ответ', whole_text, re.DOTALL)
+        # question = question.group(0).replace('Вопрос 2: ', '')
+        # question = question.replace('\n\nОтвет', '')
+    # answer = re.search(r'Ответ:(.*)Комментарий', whole_text, re.DOTALL)
+    # answer = answer.group(0).replace('Ответ: ', '')
+    # answer = answer.replace('\n\nКомментарий', '')
     else:
         return ""
 
