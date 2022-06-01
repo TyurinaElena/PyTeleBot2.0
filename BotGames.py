@@ -241,7 +241,7 @@ class TicTacToeMultiplayer:
                         self.turnPlayerId = player.id
                     else:
                         player.x_or_o = "O"
-
+            self.createButtons()
             self.keyboard = types.InlineKeyboardMarkup(row_width=3)
             for i in range(3):
                  self.keyboard.add(self.buttons[f"{i + 1}1"], self.buttons[f"{i + 1}2"], self.buttons[f"{i + 1}3"])
@@ -285,7 +285,7 @@ class TicTacToeMultiplayer:
             self.setTextGame()
             self.sendMessagesAllPlayers()
             if isEndGame == True:
-                self.sendEndGameMessages()
+                self.EndGame()
             print(isEndGame)
 
 
@@ -307,7 +307,7 @@ class TicTacToeMultiplayer:
                 isEndGame = True
                 self.winner = playerID
         if not isEndGame:
-            if num_of_choices == 0:
+            if num_of_choices == 9:
                 isEndGame = True
                 self.winner = None
         if isEndGame:
@@ -341,7 +341,7 @@ class TicTacToeMultiplayer:
                                           reply_markup=self.keyboard)
             print("успех")
 
-    def sendEndGameMessages(self):
+    def EndGame(self):
         keyboard = types.InlineKeyboardMarkup()
         btn = types.InlineKeyboardButton(text="Выход",
                                          callback_data="tttMult|Exit|" + menuBot.Menu.setExtPar(self))
@@ -357,7 +357,7 @@ class TicTacToeMultiplayer:
             self.objBot.edit_message_text(text_individual + "\nНовый раунд через 10 секунд",
                                           chat_id=player.id, message_id=player.gameMessage.id,
                                           reply_markup=keyboard)
-        timer = Timer(10, self.newRound)
+        timer = threading.Timer(10, self.newRound)
         timer.start()
 
 # -----------------------------------------------------------------------
