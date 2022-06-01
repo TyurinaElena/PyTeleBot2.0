@@ -166,20 +166,21 @@ def get_text_messages(message):
         elif ms_text == "Бумага":
             play_paper(bot, chat_id)
 
-        elif ms_text == "ЧГК Multiplayer":
+        elif ms_text == "Крестики-нолики Multiplayer":
             keyboard = types.InlineKeyboardMarkup()
-            btn = types.InlineKeyboardButton(text="Создать новую игру", callback_data="QuizM|newGame")
+            btn = types.InlineKeyboardButton(text="Создать новую игру", callback_data="tttMult|newGame")
             keyboard.add(btn)
             numGame = 0
             for game in BotGames.activeGames.values():
-                if type(game) == BotGames.Quiz_Multiplayer:
-                    numGame += 1
-                    btn = types.InlineKeyboardButton(text="Игра: " + str(numGame) + ", игроков: " + str(len(game.players)), callback_data="QuizM|Join|" + menuBot.Menu.setExtPar(game))
-                    keyboard.add(btn)
-            btn = types.InlineKeyboardButton(text="Вернуться", callback_data="QuizM|Exit")
+                if type(game) == BotGames.TicTacToeMultiplayer:
+                    if len(game.players) == 1:
+                        numGame += 1
+                        btn = types.InlineKeyboardButton(text="Игра: " + str(numGame), callback_data="tttMult|Join|" + menuBot.Menu.setExtPar(game))
+                        keyboard.add(btn)
+            btn = types.InlineKeyboardButton(text="Вернуться", callback_data="tttMult|Exit")
             keyboard.add(btn)
 
-            bot.send_message(chat_id, text=BotGames.Quiz_Multiplayer.name, reply_markup=types.ReplyKeyboardRemove())
+            bot.send_message(chat_id, text=BotGames.TicTacToeMultiplayer.name, reply_markup=types.ReplyKeyboardRemove())
             bot.send_message(chat_id, "Вы хотите начать новую игру, или присоединиться к существующей?", reply_markup=keyboard)
 
         elif ms_text == "Задание 1":
@@ -232,7 +233,7 @@ def callback_worker(call): # передать параметры
     cmd = tmp[1] if len(tmp) > 1 else ""
     par = tmp[2] if len(tmp) > 2 else ""
 
-    if menu == "QuizM":
+    if menu == "tttMult":
         BotGames.callback_worker(bot, cur_user, cmd, par, call)
 
 
