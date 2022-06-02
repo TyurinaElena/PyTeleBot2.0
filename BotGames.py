@@ -173,6 +173,7 @@ class TicTacToeMultiplayer:
             self.scores = 0
             self.choices = []
             self.x_or_o = ""
+            self.text_individual = ""
 
         def __str__(self):
             return self.name
@@ -201,19 +202,19 @@ class TicTacToeMultiplayer:
         self.players[playerID] = newPlayer
         if len(self.players) < 2:
             self.players[playerID].x_or_o = "X"
-            self.turnPlayerId = playerID
             keyboard = types.InlineKeyboardMarkup()
             btn = types.InlineKeyboardButton(text="Выход",
                                                   callback_data="tttMult|Exit|" + menuBot.Menu.setExtPar(self))
             keyboard.add(btn)
-            self.objBot.send_message(playerID, text="Пожалуйста, подождите второго игрока", reply_markup=keyboard)
+            self.players[playerID].gameMessage = self.objBot.send_message(playerID, text="Пожалуйста, подождите второго игрока", reply_markup=keyboard)
         else:
             for player in self.players.values():
                 if player.id != playerID and player.x_or_o == "X":
                     self.players[playerID].x_or_o = "O"
                 elif player.id != playerID and player.x_or_o == "O":
                     self.players[playerID].x_or_o = "X"
-                    self.turnPlayerId = playerID
+            self.players[playerID].gameMessage = self.objBot.send_message(playerID, text="Игра сейчас начнётся!",
+                                              reply_markup=None)
             self.newRound()
         return newPlayer
 
@@ -225,8 +226,18 @@ class TicTacToeMultiplayer:
             pass
         self.objBot.send_message(chat_id=remotePlayer.id, text="Вы вышли из игры!")
         menuBot.goto_menu(self.objBot, remotePlayer.id, "Игры")
+        for player in self.players.values():
+            player.scores = 0
+            keyboard = types.InlineKeyboardMarkup()
+            btn = types.InlineKeyboardButton(text="Выход",
+                                             callback_data="tttMult|Exit|" + menuBot.Menu.setExtPar(self))
+            keyboard.add(btn)
+            self.objBot.edit_message_text("Пожалуйста, подождите второго игрока", chat_id=player.id, message_id=player.gameMessage.id, reply_markup=keyboard)
         if len(self.players.values()) == 0:
             stopGame(self.id)
+            print("игра удалена")
+        else:
+            print("игра не удалена")
 
     def getPlayer(self, chat_userID):
         return self.players.get(chat_userID)
@@ -241,6 +252,9 @@ class TicTacToeMultiplayer:
                         self.turnPlayerId = player.id
                     else:
                         player.x_or_o = "O"
+                else:
+                    if player.x_or_o == "X":
+                        self.turnPlayerId = player.id
             self.createButtons()
             self.keyboard = types.InlineKeyboardMarkup(row_width=3)
             for i in range(3):
@@ -254,16 +268,8 @@ class TicTacToeMultiplayer:
                     text_individual = "ВАШ ХОД - " + player.x_or_o
                 else:
                     text_individual = "ХОД СОПЕРНИКА - " + player.x_or_o
-                gameMessage = self.objBot.send_message(player.id, text=self.textGame + text_individual,
+                self.objBot.edit_message_text(self.textGame + text_individual,  chat_id=player.id, message_id=player.gameMessage.id,
                                                        reply_markup=self.keyboard)
-                player.gameMessage = gameMessage
-        else:
-            self.keyboard = types.InlineKeyboardMarkup()
-            btn = types.InlineKeyboardButton(text="Выход",
-                                             callback_data="tttMult|Exit|" + menuBot.Menu.setExtPar(self))
-            self.keyboard.add(btn)
-            for player in self.players.values():
-                self.objBot.send_message(player.id, text="Пожалуйста, подождите второго игрока", reply_markup=self.keyboard)
 
     def playerChoice(self, chat_userID, choice):
         player = self.getPlayer(chat_userID)
@@ -282,10 +288,11 @@ class TicTacToeMultiplayer:
                                              callback_data="tttMult|Exit|" + menuBot.Menu.setExtPar(self))
             self.keyboard.add(btn)
             isEndGame = self.findWinner(player.id)
-            self.setTextGame()
-            self.sendMessagesAllPlayers()
             if isEndGame == True:
                 self.EndGame()
+            else:
+                self.setTextGame()
+                self.sendMessagesAllPlayers()
             print(isEndGame)
 
 
@@ -300,19 +307,20 @@ class TicTacToeMultiplayer:
                     (f"1{i+1}" in player.choices) and (f"2{i+1}" in player.choices) and (f"3{i+1}" in player.choices):
                 isEndGame = True
                 self.winner = playerID
+                player.scores += 1
                 break
         if not isEndGame:
             if ("11" in player.choices) and ("22" in player.choices) and ("33" in player.choices) or \
                     ("13" in player.choices) and ("22" in player.choices) and ("31" in player.choices):
                 isEndGame = True
                 self.winner = playerID
+                player.scores += 1
         if not isEndGame:
             if num_of_choices == 9:
                 isEndGame = True
                 self.winner = None
         if isEndGame:
             self.turnPlayerId = None
-            player.scores +=1
         return isEndGame
 
 
