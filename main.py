@@ -213,9 +213,6 @@ def get_text_messages(message):
         elif ms_text == "Мудрость дня":
             bot.send_message(chat_id, text=get_wolf_quote() + "\U0001F43A")
 
-        elif ms_text == "quiz":
-            bot.send_message(chat_id, text=quiz())
-
     else:
         bot.send_message(chat_id, text="Извините, я не понимаю вашу команду: " + ms_text)
         menuBot.goto_menu(bot, chat_id, "Главное меню")
@@ -261,15 +258,14 @@ def send_film(chat_id):
     film = get_randomFilm()
     info_str = f"<b>{film['Наименование']}</b>\n" \
                f"Год: {film['Год']}\n" \
-               f"Страна: {film['Страна']}</b>\n" \
+               f"Страна: {film['Страна']}\n" \
                f"Жанр: {film['Жанр']}\n" \
                f"Продолжительность: {film['Продолжительность']}"
     markup = types.InlineKeyboardMarkup()
     btn1 = types.InlineKeyboardButton(text="Трейлер", url=film["Трейлер_url"])
-    btn2 = types.InlineKeyboardButton(text="Смотреть онлайн", url=film["фильм_url"])
+    btn2 = types.InlineKeyboardButton(text="СМОТРЕТЬ онлайн", url=film["фильм_url"])
     markup.add(btn1, btn2)
-    bot.send_photo(chat_id, photo=film['Обложка_url'], caption=info_str, parse_mode='HTML',
-                   reply_markup=markup)
+    bot.send_photo(chat_id, photo=film['Обложка_url'], caption=info_str, parse_mode='HTML', reply_markup=markup)
 
 def get_anekdot():
     array_anekdots = []
@@ -312,7 +308,7 @@ def get_randomFilm():
     infoFilm = {}
     req_film = requests.get(url)
     soup = bs4.BeautifulSoup(req_film.text, "html.parser")
-    result_find = soup.find ('div', align="center", style="width: 100%")
+    result_find = soup.find('div', align="center", style="width: 100%")
     infoFilm["Наименование"] = result_find.find("h2").getText()
     names = infoFilm["Наименование"].split(" / ")
     infoFilm["Наименование_rus"] = names[0].strip()
@@ -323,6 +319,7 @@ def get_randomFilm():
     for img in result_find.findAll('img'):
         images.append(url + img.get('src'))
     infoFilm["Обложка_url"] = images[0]
+
     details = result_find.findAll('td')
     infoFilm["Год"] = details[0].contents[1].strip()
     infoFilm["Страна"] = details[1].contents[1].strip()
@@ -346,25 +343,6 @@ def get_wolf_quote():
             array_quotes.append(result.getText().strip())
     count = random.randint(1, len(array_quotes)-1)
     return array_quotes[count]
-
-def quiz():
-    req = requests.get('https://db.chgk.info/random/types1/1540754759')
-    if req.status_code == 200:
-        soup = bs4.BeautifulSoup(req.text, "html.parser")
-        result_find = soup.select('.random_question')
-        whole_text = result_find[1].getText()
-        answer = re.search(r'Ответ:(.*)Комментарий', whole_text, re.DOTALL)
-        answer = answer.group(0).replace('Ответ: ', '')
-        answer = answer.replace('\n\nКомментарий', '')
-        return answer
-        # question = re.search(r'Вопрос 2:(.*)Ответ', whole_text, re.DOTALL)
-        # question = question.group(0).replace('Вопрос 2: ', '')
-        # question = question.replace('\n\nОтвет', '')
-    # answer = re.search(r'Ответ:(.*)Комментарий', whole_text, re.DOTALL)
-    # answer = answer.group(0).replace('Ответ: ', '')
-    # answer = answer.replace('\n\nКомментарий', '')
-    else:
-        return ""
 
 # .find('div', class_='content').find('div', class_='random-results').select('div', class_='random_question').select('strong')
 

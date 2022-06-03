@@ -30,7 +30,7 @@ def dz45(bot, chat_id):
 
 
 def dz6(bot, chat_id):
-    dz6_ResponseHandler = lambda user_name: bot.send_message(chat_id, text=f"От первой до предпоследней: {user_name.text[1:-1]}\n"
+    dz6_ResponseHandler = lambda user_name: bot.send_message(chat_id, text=f"От первой до предпоследней: {user_name.text[:-1]}\n"
                                                                            f"Задом наперёд: {user_name.text[::-1]}\n"
                                                                            f"Первые пять: {user_name.text[:5]}")
     my_input(bot, chat_id, "Введите Ваше имя", dz6_ResponseHandler)
